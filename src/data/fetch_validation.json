@@ -1,0 +1,14 @@
+{
+  "guitar_notes_from_frets": {
+    "0": "open or muted",
+    "1": "first position (fret 1)",
+    "2": "second position (fret 2)"
+  },
+  "standard_chords_from_db": {
+    "C_maj_open": "x3201' (E muted, A=root pos 3, D=2nd fret, G=open, B=fret 1, e=open)",
+    "F_bar": "frets: '1' (E mute=barred on 6 strings at fret 1, A=root pos 3, D=G.open/10th position, B=e=fret 2)",
+    "A_open": "'x320' (E muted, A=open=pos 3 root... wait this doesn't work)",
+    "C7_5string": "'x32' (E muted, A=root pos 3... still doesn't work for C7)"
+  },
+  "note": "The chords-db uses shorthand fret notation where fewer characters means only some strings are included, and omitted high strings are muted. For standard open chords (1 frets: 'x320'), the letters map to strings E, D, G... not in order of the scale but string-by-string: 1st letter = fret for 3rd guitar strings (A,D,G/B/e). The format actually maps: 'x' = mute E string, '3' = fret 1 on A string (root), etc."
+}
