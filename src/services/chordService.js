@@ -13,7 +13,7 @@ const ROOT_ALIASES = {
   'C': 'C', 'D': 'D', 'E': 'E', 'F': 'F', 'G': 'G', 'A': 'A', 'B': 'B',
 };
 
-const ROOTS = Object.keys(ROOT_ALIASES);
+const ROOTS = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'];
 
 /**
  * Parse a chord name like "Cm7", "Bbmaj7", "C#dim" into { root, suffix }

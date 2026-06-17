@@ -1,6 +1,6 @@
 import React from 'react';
 
-const ROOT_NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+const ROOT_NOTES = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'];
 const TYPES = [
   { id: 'maj', label: 'Major' },
   { id: 'min', label: 'Minor' },
