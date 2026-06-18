@@ -96,10 +96,10 @@ const Fretboard = ({ frets, barre, dbFingers }) => {
   const MARGIN_TOP = 20;
   const FRET_WIDTH = 40;
   const STRING_HEIGHT = 35;
-  const GRID_WIDTH = NUT_WIDTH + DISPLAY_FRET_COUNT * FRET_WIDTH;
+  const GRID_WIDTH = DISPLAY_FRET_COUNT * FRET_WIDTH;
   const GRID_HEIGHT = (STRINGS_COUNT - 1) * STRING_HEIGHT;
 
-  const viewWidth = MARGIN_LEFT + GRID_WIDTH + 15;
+  const viewWidth = MARGIN_LEFT + NUT_WIDTH + GRID_WIDTH + 15;
   const viewHeight = MARGIN_TOP + GRID_HEIGHT + 45;
 
   return (
@@ -113,9 +113,9 @@ const Fretboard = ({ frets, barre, dbFingers }) => {
         {[...Array(DISPLAY_FRET_COUNT + 1)].map((_, i) => (
           <line
             key={`fret-v-${i}`}
-            x1={NUT_X + (i + 1) * FRET_WIDTH}
+            x1={NUT_X + i * FRET_WIDTH}
             y1={MARGIN_TOP - 5}
-            x2={NUT_X + (i + 1) * FRET_WIDTH}
+            x2={NUT_X + i * FRET_WIDTH}
             y2={MARGIN_TOP + GRID_HEIGHT + 5}
             stroke="#475569"
             strokeWidth="2"
@@ -157,13 +157,13 @@ const Fretboard = ({ frets, barre, dbFingers }) => {
           const y = MARGIN_TOP + stringIndex * STRING_HEIGHT;
 
           if (fret === -1 || fret === null || fret === undefined) {
-            return <text key={`m-${stringIndex}`} x={NUT_X - NUT_WIDTH / 2 - 5} y={y + 4} textAnchor="end" fill="#ef4444" className="font-bold">×</text>;
+            return <text key={`m-${stringIndex}`} x={MARGIN_LEFT - 5} y={y + 4} textAnchor="end" fill="#ef4444" className="font-bold">×</text>;
           }
           if (fret === 0) {
-            return <circle key={`o-${stringIndex}`} cx={NUT_X + NUT_WIDTH / 2} cy={y} r={10} fill="#22c55e" />;
+            return <circle key={`o-${stringIndex}`} cx={NUT_X} cy={y} r={10} fill="#22c55e" />;
           }
           if (fret > 0) {
-            const x = NUT_X + (fret + 1) * FRET_WIDTH - (FRET_WIDTH / 2);
+            const x = NUT_X + fret * FRET_WIDTH - (FRET_WIDTH / 2);
             return (
               <g key={`f-${stringIndex}`}>
                 <circle cx={x} cy={y} r={14} fill="#3b82f6" opacity="0.4" />
@@ -183,7 +183,7 @@ const Fretboard = ({ frets, barre, dbFingers }) => {
         {[...Array(DISPLAY_FRET_COUNT)].map((_, i) => (
           <text 
             key={`fn-${i}`} 
-            x={NUT_X + (i + 1) * FRET_WIDTH + FRET_WIDTH / 2} 
+            x={NUT_X + (i + 1) * FRET_WIDTH - (FRET_WIDTH / 2)} 
             y={MARGIN_TOP + GRID_HEIGHT + 25} 
             textAnchor="middle" 
             fill="#64748b" 
