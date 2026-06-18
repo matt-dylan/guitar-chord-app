@@ -89,7 +89,7 @@ const Fretboard = ({ frets, barre, dbFingers }) => {
   const fingerNumbers = mappedFingers || calculateFingerNumbers(frets, barreInfo);
 
   const DISPLAY_FRET_COUNT = 4;
-  const NUT_WIDTH = 12;
+  const NUT_WIDTH = 6;
 
   const MARGIN_LEFT = 30;
   const NUT_X = MARGIN_LEFT + NUT_WIDTH;
