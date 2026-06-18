@@ -89,16 +89,18 @@ const Fretboard = ({ frets, barre, dbFingers }) => {
   const fingerNumbers = mappedFingers || calculateFingerNumbers(frets, barreInfo);
 
   const DISPLAY_FRET_COUNT = 4;
+  const NUT_WIDTH = 12;
 
-  const MARGIN_LEFT = 35;
+  const MARGIN_LEFT = 30;
+  const NUT_X = MARGIN_LEFT + NUT_WIDTH;
   const MARGIN_TOP = 20;
   const FRET_WIDTH = 40;
   const STRING_HEIGHT = 35;
-  const GRID_WIDTH = DISPLAY_FRET_COUNT * FRET_WIDTH;
+  const GRID_WIDTH = NUT_WIDTH + DISPLAY_FRET_COUNT * FRET_WIDTH;
   const GRID_HEIGHT = (STRINGS_COUNT - 1) * STRING_HEIGHT;
 
-  const viewWidth = MARGIN_LEFT + GRID_WIDTH + 25;
-  const viewHeight = MARGIN_TOP + GRID_HEIGHT + 60;
+  const viewWidth = MARGIN_LEFT + GRID_WIDTH + 15;
+  const viewHeight = MARGIN_TOP + GRID_HEIGHT + 45;
 
   return (
     <div className="w-full bg-slate-900 p-4 rounded-xl shadow-2xl overflow-hidden">
@@ -111,27 +113,27 @@ const Fretboard = ({ frets, barre, dbFingers }) => {
         {[...Array(DISPLAY_FRET_COUNT + 1)].map((_, i) => (
           <line
             key={`fret-v-${i}`}
-            x1={MARGIN_LEFT + i * FRET_WIDTH}
+            x1={NUT_X + (i + 1) * FRET_WIDTH}
             y1={MARGIN_TOP - 5}
-            x2={MARGIN_LEFT + i * FRET_WIDTH}
+            x2={NUT_X + (i + 1) * FRET_WIDTH}
             y2={MARGIN_TOP + GRID_HEIGHT + 5}
             stroke="#475569"
             strokeWidth="2"
           />
         ))}
 
-        {/* Nut (Thick line at fret 0) */}
-        <line x1={MARGIN_LEFT} y1={MARGIN_TOP - 5} x2={MARGIN_LEFT + FRET_WIDTH} y2={MARGIN_TOP - 5} stroke="#cbd5e1" strokeWidth="6" />
+        {/* Nut (Thick vertical bar at fret 0) */}
+        <line x1={NUT_X} y1={MARGIN_TOP - 5} x2={NUT_X} y2={MARGIN_TOP + GRID_HEIGHT + 5} stroke="#cbd5e1" strokeWidth={NUT_WIDTH} />
 
         {/* Strings (Horizontal) */}
         {[...Array(STRINGS_COUNT)].map((_, i) => {
           const y = MARGIN_TOP + i * STRING_HEIGHT;
           return (
             <g key={`string-${i}`}>
-              <text x={MARGIN_LEFT - 10} y={y + 4} textAnchor="end" fill="#94a3b8" className="text-xs font-bold uppercase">
+              <text x={MARGIN_LEFT - 5} y={y + 4} textAnchor="end" fill="#94a3b8" className="text-xs font-bold uppercase">
                 {STRING_NAMES[i]}
               </text>
-              <line x1={MARGIN_LEFT} y1={y} x2={MARGIN_LEFT + GRID_WIDTH} y2={y} stroke="#94a3b8" strokeWidth="1.5" />
+              <line x1={NUT_X} y1={y} x2={NUT_X + GRID_WIDTH} y2={y} stroke="#94a3b8" strokeWidth="1.5" />
             </g>
           );
         })}
@@ -155,13 +157,13 @@ const Fretboard = ({ frets, barre, dbFingers }) => {
           const y = MARGIN_TOP + stringIndex * STRING_HEIGHT;
 
           if (fret === -1 || fret === null || fret === undefined) {
-            return <text key={`m-${stringIndex}`} x={MARGIN_LEFT - 15} y={y + 4} textAnchor="end" fill="#ef4444" className="font-bold">×</text>;
+            return <text key={`m-${stringIndex}`} x={NUT_X - NUT_WIDTH / 2 - 5} y={y + 4} textAnchor="end" fill="#ef4444" className="font-bold">×</text>;
           }
           if (fret === 0) {
-            return <circle key={`o-${stringIndex}`} cx={MARGIN_LEFT + FRET_WIDTH / 2} cy={y} r={10} fill="#22c55e" />;
+            return <circle key={`o-${stringIndex}`} cx={NUT_X + NUT_WIDTH / 2} cy={y} r={10} fill="#22c55e" />;
           }
           if (fret > 0) {
-            const x = MARGIN_LEFT + fret * FRET_WIDTH - (FRET_WIDTH / 2);
+            const x = NUT_X + (fret + 1) * FRET_WIDTH - (FRET_WIDTH / 2);
             return (
               <g key={`f-${stringIndex}`}>
                 <circle cx={x} cy={y} r={14} fill="#3b82f6" opacity="0.4" />
@@ -181,7 +183,7 @@ const Fretboard = ({ frets, barre, dbFingers }) => {
         {[...Array(DISPLAY_FRET_COUNT)].map((_, i) => (
           <text 
             key={`fn-${i}`} 
-            x={MARGIN_LEFT + (i + 1) * FRET_WIDTH - (FRET_WIDTH / 2)} 
+            x={NUT_X + (i + 1) * FRET_WIDTH + FRET_WIDTH / 2} 
             y={MARGIN_TOP + GRID_HEIGHT + 25} 
             textAnchor="middle" 
             fill="#64748b" 
