@@ -174,8 +174,8 @@ const Fretboard = ({ frets, barre, dbFingers, startFret = 1, displayFretCount = 
             return <circle key={`o-${stringIndex}`} cx={NUT_X} cy={y} r={10} fill="#22c55e" />;
           }
           if (fret > 0) {
-            // Calculate x position relative to the start fret
-            const relativeFret = fret - startFret + 1;
+            // Calculate x position based on absolute fret number (matches fret labels 1-4)
+            const relativeFret = fret;
             const x = NUT_X + relativeFret * FRET_WIDTH - (FRET_WIDTH / 2);
             return (
               <g key={`f-${stringIndex}`}>
