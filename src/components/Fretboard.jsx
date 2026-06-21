@@ -174,8 +174,8 @@ const Fretboard = ({ frets, barre, dbFingers, startFret = 1, displayFretCount = 
             return <circle key={`o-${stringIndex}`} cx={NUT_X} cy={y} r={10} fill="#22c55e" />;
           }
           if (fret > 0) {
-            // Calculate x position based on absolute fret number (matches fret labels 1-4)
-            const relativeFret = fret;
+            // Calculate x position based on fret relative to startFret
+            const relativeFret = fret - startFret + 1;
             const x = NUT_X + relativeFret * FRET_WIDTH - (FRET_WIDTH / 2);
             return (
               <g key={`f-${stringIndex}`}>
@@ -192,7 +192,7 @@ const Fretboard = ({ frets, barre, dbFingers, startFret = 1, displayFretCount = 
           return null;
         })}
 
-        {/* Fret Number Labels - always relative (1, 2, 3, 4...) */}
+        {/* Fret Number Labels - absolute fret numbers based on startFret */}
         {[...Array(displayFretCount)].map((_, i) => (
           <text 
             key={`fn-${i}`} 
@@ -202,7 +202,7 @@ const Fretboard = ({ frets, barre, dbFingers, startFret = 1, displayFretCount = 
             fill="#64748b" 
             className="text-xs font-semibold"
           >
-            {i + 1}
+            {startFret + i}
           </text>
         ))}
       </svg>

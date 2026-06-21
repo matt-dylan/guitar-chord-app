@@ -45,14 +45,15 @@ function parseChordName(name) {
   // Map common aliases to the suffixes used in our database
   const suffixMap = {
     // Major (empty suffix)
-    '': 'major',
-    'maj': 'major',
+    '': '',
+    'maj': '',
     '+': 'aug',
     'aug': 'aug',
     
     // Minor
-    'm': 'minor',
-    '-': 'minor',
+    'm': 'm',
+    '-': 'm',
+    'minor': 'm',
     
     // Diminished
     'dim': 'dim',
@@ -63,10 +64,6 @@ function parseChordName(name) {
     'dim7': 'dim7',
     'o7': 'dim7',
     '°7': 'dim7',
-    
-    // Augmented
-    'aug': 'aug',
-    '+': 'aug',
     
     // Suspended
     'sus': 'sus',

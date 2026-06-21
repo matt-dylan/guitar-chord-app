@@ -8,9 +8,9 @@ function App() {
   const [chordBarre, setChordBarre] = useState(null);
   const [chordFingers, setChordFingers] = useState(null);
   const [error, setError] = useState(null);
-  const [currentChord, setCurrentChord] = useState('C Major');
+  const [currentChord, setCurrentChord] = useState('C');
   const [selectedRoot, setSelectedRoot] = useState('C');
-  const [selectedSuffix, setSelectedSuffix] = useState('major');
+  const [selectedSuffix, setSelectedSuffix] = useState('');
   const [currentPosition, setCurrentPosition] = useState(0);
   const [allPositions, setAllPositions] = useState([]);
   const chordSearchRef = useRef(null);
@@ -22,100 +22,52 @@ function App() {
 
   const loadInitialChord = async () => {
     try {
-      const result = await getChordShape('C', 'major');
+      const result = await getChordShape('C', '');
       setChordShape(result.shape);
       setChordBarre(result.barre);
       setChordFingers(result.fingers);
       setAllPositions(result.positions || [result]);
       setCurrentPosition(0);
-      setCurrentChord('C Major');
+      setCurrentChord('C');
     } catch (err) {
       console.error('Failed to load initial chord:', err);
     }
   };
 
+  const SUFFIX_DISPLAY = {
+    '': 'Major', 'major': 'Major', '': 'Major', 'maj': 'Major',
+    'm': 'Minor', 'minor': 'Minor', '-': 'Minor',
+    '5': '5', 'power': '5',
+    '6': '6', '69': '69', 'm6': 'm6', 'min6': 'm6',
+    '6add9': '6add9', '6b5': '6b5',
+    '7': '7', 'dom7': '7',
+    '7b5': '7b5', '7#9': '7#9', '7#9b5': '7#9b5',
+    '7sus2': '7sus2', '7sus2#5': '7sus2#5', '7sus2sus4': '7sus2sus4',
+    '7sus4': '7sus4', '7sus4#5': '7sus4#5',
+    '9': '9', 'maj9': 'maj9', 'm9': 'm9', 'min9': 'm9',
+    '9b5': '9b5', '9sus4': '9sus4', '9#11': '9#11',
+    '11': '11', 'maj11': 'maj11', 'maj#11': 'maj#11',
+    '13': '13', 'maj13': 'maj13',
+    'add9': 'add9', 'add11': 'add11', 'madd9': 'madd9',
+    'aug': 'Aug', '+': 'Aug',
+    'aug7': 'Aug7', 'aug9': 'Aug9', 'augmaj7': 'Augmaj7', 'augmaj9': 'Augmaj9',
+    'dim': 'Dim', 'o': 'Dim', '°': 'Dim',
+    'dim7': 'Dim7', 'o7': 'Dim7', '°7': 'Dim7',
+    'm7': 'm7', 'min7': 'm7', '-7': 'm7',
+    'm7b5': 'm7b5', 'min7b5': 'm7b5', 'half-dim': 'm7b5', 'ø': 'm7b5',
+    'maj7': 'maj7', 'ma7': 'maj7',
+    'mmaj7': 'mMaj7', 'm(maj7)': 'mMaj7', 'min(maj7)': 'mMaj7',
+    'mmaj7#5': 'mMaj7#5', 'mmaj7b5': 'mMaj7b5', 'mmaj7bb5': 'mMaj7bb5',
+    'mmaj9': 'mMaj9', 'mmaj11': 'mMaj11', 'mmaj13': 'mMaj13',
+    'm#5': 'm#5', 'm6add9': 'm6add9', 'm7#5': 'm7#5',
+    'maj7b5': 'Maj7b5', 'majb5': 'Majb5', 'mbb5': 'Mbbl5',
+    'maj7sus2': 'Maj7sus2', 'maj7sus4': 'Maj7sus4',
+    'maj7sus2sus4': 'Maj7sus2sus4', 'maj7sus4#5': 'Maj7sus4#5',
+    'sus': 'Sus', 'sus2': 'Sus2', 'sus4': 'Sus4', 'sus2sus4': 'Sus',
+    'sus2#5': 'Sus2#5', 'sus2b5': 'Sus2b5', 'sus4#5': 'Sus4#5',
+  };
+
   const formatChordName = (rawName) => {
-    const suffixMap = {
-      'minor': 'Minor',
-      'm': 'Minor',
-      '-': 'Minor',
-      'major': 'Major',
-      '': 'Major',
-      'maj': 'Major',
-      'dim': 'Dim',
-      'dim7': 'Dim7',
-      'o': 'Dim',
-      'o7': 'Dim7',
-      'm7': 'm7',
-      'min7': 'm7',
-      '-7': 'm7',
-      'm7b5': 'm7b5',
-      'min7b5': 'm7b5',
-      'maj7': 'maj7',
-      'ma7': 'maj7',
-      'mmaj7': 'mMaj7',
-      'sus': 'Sus',
-      'sus2': 'Sus2',
-      'sus4': 'Sus4',
-      'sus2sus4': 'Sus',
-      '7': '7',
-      'dom7': '7',
-      '5': '5',
-      'power': '5',
-      'aug': 'Aug',
-      '+': 'Aug',
-      'add9': 'add9',
-      'm9': 'm9',
-      'maj9': 'maj9',
-      '9': '9',
-      '11': '11',
-      '13': '13',
-      '6': '6',
-      '69': '69',
-      'add11': 'add11',
-      'madd9': 'madd9',
-      '6add9': '6add9',
-      '6b5': '6b5',
-      '7b5': '7b5',
-      '7#9': '7#9',
-      '7sus4': '7sus4',
-      '7sus2': '7sus2',
-      '9b5': '9b5',
-      '9sus4': '9sus4',
-      'maj11': 'maj11',
-      'maj#11': 'maj#11',
-      'maj13': 'maj13',
-      'm11': 'm11',
-      'm13': 'm13',
-      'm6add9': 'm6add9',
-      'm7#5': 'm7#5',
-      'aug7': 'Aug7',
-      'aug9': 'Aug9',
-      'augmaj7': 'Augmaj7',
-      'augmaj9': 'Augmaj9',
-      'mmaj7#5': 'mMaj7#5',
-      'mmaj7b5': 'mMaj7b5',
-      'mmaj7bb5': 'mMaj7bb5',
-      'mmaj9': 'mMaj9',
-      'mmaj11': 'mMaj11',
-      'mmaj13': 'mMaj13',
-      'maj7b5': 'Maj7b5',
-      'maj7sus2': 'Maj7sus2',
-      'maj7sus4': 'Maj7sus4',
-      'maj7sus2sus4': 'Maj7sus2sus4',
-      'maj7sus4#5': 'Maj7sus4#5',
-      'majb5': 'Majb5',
-      'mbb5': 'Mbbl5',
-      'm#5': 'm#5',
-      'sus2#5': 'Sus2#5',
-      'sus2b5': 'Sus2b5',
-      'sus4#5': 'Sus4#5',
-      '7sus2#5': '7sus2#5',
-      '7sus2sus4': '7sus2sus4',
-      '7sus4#5': '7sus4#5',
-      '7#9b5': '7#9b5',
-    };
-    
     // Map DB root names back to user-facing names
     const DB_TO_USER = {
       'C#': 'C#', 'F#': 'F#',
@@ -139,7 +91,7 @@ function App() {
     if (!root) return rawName;
     
     // Map suffix to display name
-    const displaySuffix = suffixMap[suffix] || suffix || 'Major';
+    const displaySuffix = SUFFIX_DISPLAY[suffix] || suffix || 'Major';
     if (displaySuffix === 'Major' || displaySuffix === '') return root;
     return `${root} ${displaySuffix}`;
   };
@@ -153,8 +105,8 @@ function App() {
         const suffixRaw = rawName.slice(r.length).toLowerCase();
         // Map to a DB suffix the dropdown can use
         const suffixMap = {
-          'minor': 'minor', 'm': 'minor', '-': 'minor',
-          'major': 'major', '': 'major', 'maj': 'major',
+          'minor': 'm', 'm': 'm', '-': 'm',
+          'major': '', '': '', 'maj': '',
           'dim': 'dim', 'dim7': 'dim7', 'o': 'dim', 'o7': 'dim7',
           'm7': 'm7', 'min7': 'm7', '-7': 'm7',
           'm7b5': 'm7b5', 'min7b5': 'm7b5',
@@ -184,7 +136,7 @@ function App() {
           '7sus2#5': '7sus2#5', '7sus2sus4': '7sus2sus4', '7sus4#5': '7sus4#5',
           '7#9b5': '7#9b5',
         };
-        const suffix = suffixMap[suffixRaw] || suffixRaw || 'major';
+        const suffix = suffixMap[suffixRaw] || suffixRaw || '';
         return { root, suffix };
       }
     }
@@ -216,15 +168,7 @@ function App() {
     try {
       const result = await getChordShape(chordName);
       
-      let displayName = chordName;
-      if (chordName.endsWith('power')) {
-        displayName = chordName.replace('power', '') + ' Power';
-      } else if (chordName === 'C' || chordName === 'G' || chordName === 'D' || 
-                 chordName === 'A' || chordName === 'E' || chordName === 'F') {
-        displayName = chordName + ' Major';
-      }
-      
-      setCurrentChord(displayName);
+      setCurrentChord(formatChordName(chordName));
       setChordShape(result.shape);
       setChordBarre(result.barre);
       setChordFingers(result.fingers);
@@ -245,9 +189,9 @@ function App() {
 
   const handleRootChange = (root) => {
     setSelectedRoot(root);
-    setSelectedSuffix('major');
+    setSelectedSuffix('');
     setCurrentPosition(0);
-    loadChord(root, 'major');
+    loadChord(root, '');
   };
 
   const handleSuffixChange = (suffix) => {
@@ -264,7 +208,7 @@ function App() {
       setChordFingers(result.fingers);
       setAllPositions(result.positions || [result]);
       setCurrentPosition(0);
-      setCurrentChord(`${root} ${suffix === '' || suffix === 'major' ? '' : suffix}`);
+      setCurrentChord(`${root} ${suffix === '' ? '' : suffix}`);
       setError(null);
     } catch (err) {
       console.error('Failed to load chord:', err);
@@ -343,7 +287,7 @@ function App() {
               >
                 {suffixes.map(suffix => (
                   <option key={suffix} value={suffix}>
-                    {suffix === '' ? 'Major' : suffix.startsWith('/') ? suffix : suffix === 'minor' ? 'Minor' : suffix}
+                    {SUFFIX_DISPLAY[suffix] || suffix}
                   </option>
                 ))}
               </select>
