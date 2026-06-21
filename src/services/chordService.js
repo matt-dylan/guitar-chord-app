@@ -1,19 +1,18 @@
 import chordData from '../data/chords_db.json';
 
 // Database root names (as they appear in the JSON file)
-const DB_ROOTS = ['C', 'Csharp', 'D', 'Eb', 'E', 'F', 'Fsharp', 'G', 'Ab', 'A', 'Bb', 'B'];
+// The new database uses the same root names: A, A#, B, C, C#, D, D#, E, F, F#, G, G#
+const ROOTS = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'];
 
 // Mapping from common user input to database root names
 const ROOT_ALIASES = {
-  'C#': 'Csharp', 'Db': 'Csharp',
-  'F#': 'Fsharp', 'Gb': 'Fsharp',
-  'Eb': 'Eb', 'D#': 'Eb',
-  'Bb': 'Bb', 'A#': 'Bb',
-  'Ab': 'Ab', 'G#': 'Ab',
+  'C#': 'C#', 'Db': 'C#',
+  'F#': 'F#', 'Gb': 'F#',
+  'Eb': 'Eb', 'D#': 'D#',
+  'Bb': 'Bb', 'A#': 'A#',
+  'Ab': 'Ab', 'G#': 'G#',
   'C': 'C', 'D': 'D', 'E': 'E', 'F': 'F', 'G': 'G', 'A': 'A', 'B': 'B',
 };
-
-const ROOTS = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'];
 
 /**
  * Parse a chord name like "Cm7", "Bbmaj7", "C#dim" into { root, suffix }
@@ -21,7 +20,7 @@ const ROOTS = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'];
 function parseChordName(name) {
   const trimmed = name.trim();
   
-  // Sort roots by length descending so we match longest first (e.g. "Csharp" before "C", "Eb" before "E")
+  // Sort roots by length descending so we match longest first (e.g. "C#" before "C")
   const sortedRoots = [...ROOTS].sort((a, b) => b.length - a.length);
   
   // Try to match root note first (longest match wins)
@@ -39,9 +38,6 @@ function parseChordName(name) {
   if (!matchedRoot) {
     return null; // Can't parse
   }
-  
-  // Map to database root name (e.g. "C#" -> "Csharp")
-  const dbRoot = ROOT_ALIASES[matchedRoot];
   
   // Normalize the suffix part
   let suffix = rest.toLowerCase().replace(/[^a-z0-9#b+]/g, '');
@@ -63,6 +59,11 @@ function parseChordName(name) {
     'o': 'dim',
     '°': 'dim',
     
+    // Dim7
+    'dim7': 'dim7',
+    'o7': 'dim7',
+    '°7': 'dim7',
+    
     // Augmented
     'aug': 'aug',
     '+': 'aug',
@@ -79,7 +80,6 @@ function parseChordName(name) {
     'maj7': 'maj7',
     'ma7': 'maj7',
     'm(maj7)': 'mmaj7',
-    'm(maj7)': 'mmaj7',
     'min(maj7)': 'mmaj7',
     'm7': 'm7',
     'min7': 'm7',
@@ -94,6 +94,7 @@ function parseChordName(name) {
     '7b5': '7b5',
     '7#9': '7#9',
     '7sus4': '7sus4',
+    '7sus2': '7sus2',
     'alt': 'alt',
     
     // Ninth, eleventh, thirteenth
@@ -104,8 +105,10 @@ function parseChordName(name) {
     'min9': 'm9',
     '9#11': '9#11',
     '9b5': '9b5',
+    '9sus4': '9sus4',
     '11': '11',
     'maj11': 'maj11',
+    'maj#11': 'maj#11',
     '13': '13',
     'maj13': 'maj13',
     'm6': 'm6',
@@ -113,6 +116,8 @@ function parseChordName(name) {
     'm69': 'm69',
     '6': '6',
     '69': '69',
+    '6add9': '6add9',
+    '6b5': '6b5',
     'add9': 'add9',
     'add11': 'add11',
     'madd9': 'madd9',
@@ -138,16 +143,16 @@ function parseChordName(name) {
   }
   
   if (matchedSuffix) {
-    return { root: dbRoot, suffix: matchedSuffix };
+    return { root: matchedRoot, suffix: matchedSuffix };
   }
   
   // If no suffix matched, return the raw suffix as-is (it might be a valid DB suffix)
   if (suffix) {
-    return { root: dbRoot, suffix };
+    return { root: matchedRoot, suffix };
   }
   
   // No suffix at all → default to major
-  return { root: dbRoot, suffix: 'major' };
+  return { root: matchedRoot, suffix: 'major' };
 }
 
 /**
@@ -160,8 +165,8 @@ export async function getChordShape(rootOrName, suffix) {
   let root, suffixName;
   
   if (suffix !== undefined) {
-    // Two-arg form: map user-facing root names to DB names
-    root = ROOT_ALIASES[rootOrName.trim().replace(/\s+/g, '')] || rootOrName.trim().replace(/\s+/g, '');
+    // Two-arg form: use root directly (already mapped)
+    root = rootOrName.trim().replace(/\s+/g, '');
     suffixName = suffix;
   } else {
     // Single-arg form: parse the chord name
@@ -179,7 +184,8 @@ export async function getChordShape(rootOrName, suffix) {
     return {
       shape: chord.frets,
       barre: chord.barre,
-      fingers: chord.fingers
+      fingers: chord.fingers,
+      positions: chord.positions || [chord]  // Include all positions for cycling
     };
   }
   
@@ -206,7 +212,8 @@ export async function getChordShape(rootOrName, suffix) {
         return {
           shape: chord.frets,
           barre: chord.barre,
-          fingers: chord.fingers
+          fingers: chord.fingers,
+          positions: chord.positions || [chord]
         };
       }
     }
@@ -227,9 +234,40 @@ export function getRoots() {
  */
 export function getSuffixes(root) {
   const normalizedName = root.trim().replace(/\s+/g, '');
-  const dbRoot = ROOT_ALIASES[normalizedName] || normalizedName;
-  if (chordData[dbRoot]) {
-    return Object.keys(chordData[dbRoot]);
+  if (chordData[normalizedName]) {
+    return Object.keys(chordData[normalizedName])
+      .sort((a, b) => {
+        // Sort empty string (major) first, then alphabetically
+        if (a === '' && b !== '') return -1;
+        if (a !== '' && b === '') return 1;
+        return a.localeCompare(b);
+      });
   }
   return [];
+}
+
+/**
+ * Returns all positions for a given chord (for position cycling).
+ */
+export function getChordPositions(rootOrName, suffix) {
+  let root, suffixName;
+  
+  if (suffix !== undefined) {
+    root = rootOrName.trim().replace(/\s+/g, '');
+    suffixName = suffix;
+  } else {
+    const parsed = parseChordName(rootOrName);
+    if (!parsed) {
+      throw new Error(`Could not parse chord name "${rootOrName}"`);
+    }
+    root = parsed.root;
+    suffixName = parsed.suffix;
+  }
+  
+  if (chordData[root] && chordData[root][suffixName]) {
+    const chord = chordData[root][suffixName];
+    return chord.positions || [chord];
+  }
+  
+  throw new Error(`Chord "${rootOrName}" not found in the local library.`);
 }

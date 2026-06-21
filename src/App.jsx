@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ChordSearch from './components/ChordSearch';
 import Fretboard from './components/Fretboard';
-import { getChordShape, getRoots, getSuffixes } from './services/chordService';
+import { getChordShape, getRoots, getSuffixes, getChordPositions } from './services/chordService';
 
 function App() {
   const [chordShape, setChordShape] = useState([-1, 3, 2, 0, 1, 0]); // C major by default
@@ -11,6 +11,8 @@ function App() {
   const [currentChord, setCurrentChord] = useState('C Major');
   const [selectedRoot, setSelectedRoot] = useState('C');
   const [selectedSuffix, setSelectedSuffix] = useState('major');
+  const [currentPosition, setCurrentPosition] = useState(0);
+  const [allPositions, setAllPositions] = useState([]);
   const chordSearchRef = useRef(null);
 
   // Load initial chord on mount
@@ -24,6 +26,8 @@ function App() {
       setChordShape(result.shape);
       setChordBarre(result.barre);
       setChordFingers(result.fingers);
+      setAllPositions(result.positions || [result]);
+      setCurrentPosition(0);
       setCurrentChord('C Major');
     } catch (err) {
       console.error('Failed to load initial chord:', err);
@@ -66,16 +70,55 @@ function App() {
       '9': '9',
       '11': '11',
       '13': '13',
-      'm6': 'm6',
       '6': '6',
       '69': '69',
       'add11': 'add11',
       'madd9': 'madd9',
+      '6add9': '6add9',
+      '6b5': '6b5',
+      '7b5': '7b5',
+      '7#9': '7#9',
+      '7sus4': '7sus4',
+      '7sus2': '7sus2',
+      '9b5': '9b5',
+      '9sus4': '9sus4',
+      'maj11': 'maj11',
+      'maj#11': 'maj#11',
+      'maj13': 'maj13',
+      'm11': 'm11',
+      'm13': 'm13',
+      'm6add9': 'm6add9',
+      'm7#5': 'm7#5',
+      'aug7': 'Aug7',
+      'aug9': 'Aug9',
+      'augmaj7': 'Augmaj7',
+      'augmaj9': 'Augmaj9',
+      'mmaj7#5': 'mMaj7#5',
+      'mmaj7b5': 'mMaj7b5',
+      'mmaj7bb5': 'mMaj7bb5',
+      'mmaj9': 'mMaj9',
+      'mmaj11': 'mMaj11',
+      'mmaj13': 'mMaj13',
+      'maj7b5': 'Maj7b5',
+      'maj7sus2': 'Maj7sus2',
+      'maj7sus4': 'Maj7sus4',
+      'maj7sus2sus4': 'Maj7sus2sus4',
+      'maj7sus4#5': 'Maj7sus4#5',
+      'majb5': 'Majb5',
+      'mbb5': 'Mbbl5',
+      'm#5': 'm#5',
+      'sus2#5': 'Sus2#5',
+      'sus2b5': 'Sus2b5',
+      'sus4#5': 'Sus4#5',
+      '7sus2#5': '7sus2#5',
+      '7sus2sus4': '7sus2sus4',
+      '7sus4#5': '7sus4#5',
+      '7#9b5': '7#9b5',
     };
     
     // Map DB root names back to user-facing names
     const DB_TO_USER = {
-      'Csharp': 'C#', 'Fsharp': 'F#',
+      'C#': 'C#', 'F#': 'F#',
       'Eb': 'Eb', 'Bb': 'Bb', 'Ab': 'Ab',
       'C': 'C', 'D': 'D', 'E': 'E', 'F': 'F', 'G': 'G', 'A': 'A', 'B': 'B',
     };
@@ -124,6 +167,22 @@ function App() {
           'add9': 'add9', 'm9': 'm9', 'maj9': 'maj9', '9': '9',
           '11': '11', '13': '13', 'm6': 'm6', '6': '6', '69': '69',
           'add11': 'add11', 'madd9': 'madd9',
+          '6add9': '6add9', '6b5': '6b5',
+          '7b5': '7b5', '7#9': '7#9', '7sus4': '7sus4', '7sus2': '7sus2',
+          '9b5': '9b5', '9sus4': '9sus4',
+          'maj11': 'maj11', 'maj#11': 'maj#11', 'maj13': 'maj13',
+          'm11': 'm11', 'm13': 'm13', 'm6add9': 'm6add9',
+          'm7#5': 'm7#5', 'aug7': 'aug7', 'aug9': 'aug9', 'augmaj7': 'augmaj7', 'augmaj9': 'augmaj9',
+          'mmaj7#5': 'mmaj7#5', 'mmaj7b5': 'mmaj7b5',
+          'mmaj7bb5': 'mmaj7bb5', 'mmaj9': 'mmaj9', 'mmaj11': 'mmaj11', 'mmaj13': 'mmaj13',
+          'maj7b5': 'maj7b5', 'maj7sus2': 'maj7sus2', 'maj7sus4': 'maj7sus4',
+          'maj7sus2sus4': 'maj7sus2sus4', 'maj7sus4#5': 'maj7sus4#5',
+          'majb5': 'majb5',
+          'mbb5': 'mbb5', 'm#5': 'm#5',
+          'sus2#5': 'sus2#5', 'sus2b5': 'sus2b5', 'sus2sus4': 'sus2sus4',
+          'sus4#5': 'sus4#5',
+          '7sus2#5': '7sus2#5', '7sus2sus4': '7sus2sus4', '7sus4#5': '7sus4#5',
+          '7#9b5': '7#9b5',
         };
         const suffix = suffixMap[suffixRaw] || suffixRaw || 'major';
         return { root, suffix };
@@ -137,6 +196,8 @@ function App() {
     setChordShape(result.shape);
     setChordBarre(result.barre);
     setChordFingers(result.fingers);
+    setAllPositions(result.positions || [result]);
+    setCurrentPosition(0);
     
     // Sync dropdowns to the searched chord
     const parsed = parseChordForUI(name);
@@ -167,6 +228,8 @@ function App() {
       setChordShape(result.shape);
       setChordBarre(result.barre);
       setChordFingers(result.fingers);
+      setAllPositions(result.positions || [result]);
+      setCurrentPosition(0);
       
       // Sync dropdowns to the searched chord
       const parsed = parseChordForUI(chordName);
@@ -183,11 +246,13 @@ function App() {
   const handleRootChange = (root) => {
     setSelectedRoot(root);
     setSelectedSuffix('major');
+    setCurrentPosition(0);
     loadChord(root, 'major');
   };
 
   const handleSuffixChange = (suffix) => {
     setSelectedSuffix(suffix);
+    setCurrentPosition(0);
     loadChord(selectedRoot, suffix);
   };
 
@@ -197,7 +262,9 @@ function App() {
       setChordShape(result.shape);
       setChordBarre(result.barre);
       setChordFingers(result.fingers);
-      setCurrentChord(`${root} ${suffix === 'major' ? '' : suffix}`);
+      setAllPositions(result.positions || [result]);
+      setCurrentPosition(0);
+      setCurrentChord(`${root} ${suffix === '' || suffix === 'major' ? '' : suffix}`);
       setError(null);
     } catch (err) {
       console.error('Failed to load chord:', err);
@@ -205,8 +272,38 @@ function App() {
     }
   };
 
+  const cyclePosition = (direction) => {
+    if (allPositions.length <= 1) return;
+    const newIndex = currentPosition + direction;
+    if (newIndex >= 0 && newIndex < allPositions.length) {
+      setCurrentPosition(newIndex);
+      const pos = allPositions[newIndex];
+      setChordShape(pos.frets);
+      setChordBarre(pos.barre || null);
+      setChordFingers(pos.fingers);
+    }
+  };
+
   const roots = getRoots();
   const suffixes = getSuffixes(selectedRoot);
+
+  // Get current position data
+  const currentPositionData = allPositions[currentPosition] || {};
+  const hasCapo = currentPositionData.capo === true;
+  
+  // Calculate startFret: use capo/barre position if present, otherwise find the first fretted fret
+  let startFret = 1;
+  if (currentPositionData.frets && currentPositionData.frets.length > 0) {
+    if (hasCapo && currentPositionData.barre) {
+      startFret = currentPositionData.barre;
+    } else {
+      // Find the minimum fretted fret (excluding muted strings -1)
+      const frettedFrets = currentPositionData.frets.filter(f => f > 0);
+      startFret = frettedFrets.length > 0 ? Math.min(...frettedFrets) : 1;
+    }
+  }
+  const capoFret = startFret;
+  const displayFretCount = 4;
 
   return (
     <div className="min-h-screen p-4 md:p-8 max-w-4xl mx-auto">
@@ -245,15 +342,50 @@ function App() {
                 className="w-full bg-slate-700 text-white px-3 py-2 rounded-lg border border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {suffixes.map(suffix => (
-                  <option key={suffix} value={suffix}>{suffix === 'major' ? 'Major' : suffix}</option>
+                  <option key={suffix} value={suffix}>
+                    {suffix === '' ? 'Major' : suffix.startsWith('/') ? suffix : suffix === 'minor' ? 'Minor' : suffix}
+                  </option>
                 ))}
               </select>
             </div>
           </div>
         </div>
 
+        {/* Position Cycling - always visible for consistent layout */}
+        <div className="bg-slate-800/50 rounded-xl p-3 border border-slate-700/50 mb-4 flex items-center justify-center gap-4">
+            <button
+              onClick={() => cyclePosition(-1)}
+              disabled={allPositions.length <= 1 || currentPosition === 0}
+              className="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 disabled:opacity-30 disabled:cursor-not-allowed text-white transition-all"
+              title="Previous position"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+            </button>
+            <span className="text-sm text-slate-300 font-medium">
+              Position {currentPosition + 1} of {allPositions.length}
+            </span>
+            <button
+              onClick={() => cyclePosition(1)}
+              disabled={allPositions.length <= 1 || currentPosition === allPositions.length - 1}
+              className="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 disabled:opacity-30 disabled:cursor-not-allowed text-white transition-all"
+              title="Next position"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+              </svg>
+            </button>
+        </div>
+
         {/* Fretboard */}
-        <Fretboard frets={chordShape} barre={chordBarre} dbFingers={chordFingers} />
+        <Fretboard 
+          frets={chordShape} 
+          barre={chordBarre} 
+          dbFingers={chordFingers}
+          startFret={capoFret}
+          displayFretCount={displayFretCount}
+        />
 
         {/* Search box */}
         <ChordSearch 

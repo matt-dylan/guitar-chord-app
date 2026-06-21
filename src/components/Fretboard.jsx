@@ -75,7 +75,7 @@ function calculateFingerNumbers(frets, barreInfo) {
   return fingers;
 }
 
-const Fretboard = ({ frets, barre, dbFingers }) => {
+const Fretboard = ({ frets, barre, dbFingers, startFret = 1, displayFretCount = 4 }) => {
   // Use database barre info if available, otherwise detect it
   const barreInfo = barre ? {
     isBarre: true,
@@ -84,11 +84,18 @@ const Fretboard = ({ frets, barre, dbFingers }) => {
     endString: STRINGS_COUNT - 1
   } : detectBarreChord(frets);
 
-  // Map database fingers (LowE, A, D, G, B, e) to SVG order (high e, B, G, D, A, Low E)
-  const mappedFingers = dbFingers ? [...dbFingers].reverse() : null;
-  const fingerNumbers = mappedFingers || calculateFingerNumbers(frets, barreInfo);
+  // Database fingers are in LowE-to-e order (thickest to thinnest)
+  // SVG displays in high-e-to-LowE order (thinnest to thickest)
+  // So we reverse to map correctly
+  let fingerNumbers;
+  if (dbFingers && Array.isArray(dbFingers) && dbFingers.length === STRINGS_COUNT) {
+    // Use database fingers, reversed for SVG order
+    fingerNumbers = [...dbFingers].reverse();
+  } else {
+    // Fallback to calculated fingers
+    fingerNumbers = calculateFingerNumbers(frets, barreInfo);
+  }
 
-  const DISPLAY_FRET_COUNT = 4;
   const NUT_WIDTH = 6;
 
   const MARGIN_LEFT = 30;
@@ -96,11 +103,15 @@ const Fretboard = ({ frets, barre, dbFingers }) => {
   const MARGIN_TOP = 20;
   const FRET_WIDTH = 40;
   const STRING_HEIGHT = 35;
-  const GRID_WIDTH = DISPLAY_FRET_COUNT * FRET_WIDTH;
+  const GRID_WIDTH = displayFretCount * FRET_WIDTH;
   const GRID_HEIGHT = (STRINGS_COUNT - 1) * STRING_HEIGHT;
 
   const viewWidth = MARGIN_LEFT + NUT_WIDTH + GRID_WIDTH + 15;
   const viewHeight = MARGIN_TOP + GRID_HEIGHT + 45;
+
+  // Determine where to start showing fret numbers
+  // If startFret > 1, show the barre/capo position and absolute fret numbers
+  const fretStart = startFret > 1 ? startFret : 1;
 
   return (
     <div className="w-full bg-slate-900 p-4 rounded-xl shadow-2xl overflow-hidden">
@@ -110,7 +121,7 @@ const Fretboard = ({ frets, barre, dbFingers }) => {
         xmlns="http://www.w3.org/2000/svg"
       >
         {/* Fret Lines (Vertical) */}
-        {[...Array(DISPLAY_FRET_COUNT + 1)].map((_, i) => (
+        {[...Array(displayFretCount + 1)].map((_, i) => (
           <line
             key={`fret-v-${i}`}
             x1={NUT_X + i * FRET_WIDTH}
@@ -122,8 +133,8 @@ const Fretboard = ({ frets, barre, dbFingers }) => {
           />
         ))}
 
-        {/* Nut (Thick vertical bar at fret 0) */}
-        <line x1={NUT_X} y1={MARGIN_TOP - 5} x2={NUT_X} y2={MARGIN_TOP + GRID_HEIGHT + 5} stroke="#cbd5e1" strokeWidth={NUT_WIDTH} />
+        {/* Nut (Thick vertical bar at fret 0, only for open positions) */}
+        {startFret <= 1 && <line x1={NUT_X} y1={MARGIN_TOP - 5} x2={NUT_X} y2={MARGIN_TOP + GRID_HEIGHT + 5} stroke="#cbd5e1" strokeWidth={NUT_WIDTH} />}
 
         {/* Strings (Horizontal) */}
         {[...Array(STRINGS_COUNT)].map((_, i) => {
@@ -139,12 +150,12 @@ const Fretboard = ({ frets, barre, dbFingers }) => {
         })}
 
         {/* Barre Highlight */}
-        {barreInfo && (
+        {barreInfo && barreInfo.isBarre && (
           <rect
-            x={MARGIN_LEFT + barreInfo.barreFret * FRET_WIDTH - 4}
-            y={MARGIN_TOP + barreInfo.startString * STRING_HEIGHT - 10}
+            x={NUT_X + (barreInfo.barreFret - startFret) * FRET_WIDTH - 4}
+            y={MARGIN_TOP}
             width={8}
-            height={(barreInfo.endString - barreInfo.startString + 1) * STRING_HEIGHT + 20}
+            height={GRID_HEIGHT}
             rx="4"
             fill="#ef4444"
             opacity="0.5"
@@ -163,7 +174,9 @@ const Fretboard = ({ frets, barre, dbFingers }) => {
             return <circle key={`o-${stringIndex}`} cx={NUT_X} cy={y} r={10} fill="#22c55e" />;
           }
           if (fret > 0) {
-            const x = NUT_X + fret * FRET_WIDTH - (FRET_WIDTH / 2);
+            // Calculate x position relative to the start fret
+            const relativeFret = fret - startFret + 1;
+            const x = NUT_X + relativeFret * FRET_WIDTH - (FRET_WIDTH / 2);
             return (
               <g key={`f-${stringIndex}`}>
                 <circle cx={x} cy={y} r={14} fill="#3b82f6" opacity="0.4" />
@@ -179,8 +192,8 @@ const Fretboard = ({ frets, barre, dbFingers }) => {
           return null;
         })}
 
-        {/* Fret Number Labels */}
-        {[...Array(DISPLAY_FRET_COUNT)].map((_, i) => (
+        {/* Fret Number Labels - always relative (1, 2, 3, 4...) */}
+        {[...Array(displayFretCount)].map((_, i) => (
           <text 
             key={`fn-${i}`} 
             x={NUT_X + (i + 1) * FRET_WIDTH - (FRET_WIDTH / 2)} 
@@ -197,7 +210,7 @@ const Fretboard = ({ frets, barre, dbFingers }) => {
       <div className="mt-3 flex gap-4 text-xs text-slate-400 justify-center">
         <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block"></span> Open</span>
         <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span> Fretted</span>
-        {barreInfo && <span className="flex items-center gap-1"><span className="w-4 h-1 bg-red-500 inline-block rounded"></span> Barre</span>}
+        {barreInfo && barreInfo.isBarre && <span className="flex items-center gap-1"><span className="w-4 h-1 bg-red-500 inline-block rounded"></span> Barre</span>}
       </div>
     </div>
   );
