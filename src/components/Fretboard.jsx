@@ -5,7 +5,7 @@ const STRINGS_COUNT = 6;
 // Standard notation (bottom to top): E, A, D, G, B, e
 const STRING_NAMES = ['e', 'B', 'G', 'D', 'A', 'E'];
 
-const getChordFret = (stringIndex, frets) => frets[STRINGS_COUNT - 1 - stringIndex];
+const getChordFret = (stringIndex, frets) => frets[stringIndex];
 
 function detectBarreChord(frets) {
   const frettedNotes = [];
@@ -84,13 +84,11 @@ const Fretboard = ({ frets, barre, dbFingers, startFret = 1, displayFretCount = 
     endString: STRINGS_COUNT - 1
   } : detectBarreChord(frets);
 
-  // Database fingers are in LowE-to-e order (thickest to thinnest)
-  // SVG displays in high-e-to-LowE order (thinnest to thickest)
-  // So we reverse to map correctly
+  // Database fingers are in e-to-E order (thinnest to thickest)
+  // SVG displays in the same order, so no reversal needed
   let fingerNumbers;
   if (dbFingers && Array.isArray(dbFingers) && dbFingers.length === STRINGS_COUNT) {
-    // Use database fingers, reversed for SVG order
-    fingerNumbers = [...dbFingers].reverse();
+    fingerNumbers = [...dbFingers];
   } else {
     // Fallback to calculated fingers
     fingerNumbers = calculateFingerNumbers(frets, barreInfo);
