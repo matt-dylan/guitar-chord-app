@@ -233,9 +233,19 @@ function App() {
 
   // Get current position data
   const currentPositionData = allPositions[currentPosition] || {};
+  const hasCapo = currentPositionData.capo === true;
   
-  // Use the stored startFret from position data, fallback to calculation
-  const startFret = currentPositionData.startFret || 1;
+  // Calculate startFret: use capo/barre position if present, otherwise find the first fretted fret
+  let startFret = 1;
+  if (currentPositionData.frets && currentPositionData.frets.length > 0) {
+    if (hasCapo && currentPositionData.barre) {
+      startFret = currentPositionData.barre;
+    } else {
+      // Find the minimum fretted fret (excluding muted strings -1)
+      const frettedFrets = currentPositionData.frets.filter(f => f > 0);
+      startFret = frettedFrets.length > 0 ? Math.min(...frettedFrets) : 1;
+    }
+  }
   const capoFret = startFret;
   const displayFretCount = 4;
 
