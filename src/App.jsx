@@ -35,8 +35,8 @@ function App() {
   };
 
   const SUFFIX_DISPLAY = {
-    '': 'Major', 'major': 'Major', '': 'Major', 'maj': 'Major',
-    'm': 'Minor', 'minor': 'Minor', '-': 'Minor',
+    '': 'maj', 'major': 'maj', 'maj': 'maj',
+    'm': 'min', 'minor': 'min', '-': 'min',
     '5': '5', 'power': '5',
     '6': '6', '69': '69', 'm6': 'm6', 'min6': 'm6',
     '6add9': '6add9', '6b5': '6b5',
@@ -91,8 +91,8 @@ function App() {
     if (!root) return rawName;
     
     // Map suffix to display name
-    const displaySuffix = SUFFIX_DISPLAY[suffix] || suffix || 'Major';
-    if (displaySuffix === 'Major' || displaySuffix === '') return root;
+    const displaySuffix = SUFFIX_DISPLAY[suffix] || suffix || 'maj';
+    if (displaySuffix === 'maj' || displaySuffix === '') return root;
     return `${root} ${displaySuffix}`;
   };
 
