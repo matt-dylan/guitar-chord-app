@@ -1,287 +1,229 @@
 import React from 'react';
 
-const Fretboard = ({ chord, positions, selectedPosition, onSelectPosition, isBarre, barreFret }) => {
-  const STRING_COUNT = 6;
-  const FRET_COUNT = 15;
+const STRINGS_COUNT = 6;
+// Top to bottom on screen: high e, B, G, D, A, Low E
+// Standard notation (bottom to top): E, A, D, G, B, e
+const STRING_NAMES = ['e', 'B', 'G', 'D', 'A', 'E'];
 
-  const stringLabels = ['E', 'A', 'D', 'G', 'B', 'e'];
-  const noteMap = {
-    'E': ['E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#'],
-    'A': ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'],
-    'D': ['D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E'],
-    'G': ['G', 'G#', 'A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A'],
-    'B': ['B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B', 'C', 'C#'],
-    'e': ['e', 'f', 'f#', 'g', 'g#', 'a', 'a#', 'b', 'c', 'c#', 'd', 'd#', 'e', 'f', 'f#'],
-  };
+const getChordFret = (stringIndex, frets) => frets[STRINGS_COUNT - 1 - stringIndex];
 
-  const margin = { top: 40, right: 30, bottom: 50, left: 35 };
-  const spacing = {
-    string: 28,
-    fret: 48,
-  };
+function detectBarreChord(frets) {
+  const frettedNotes = [];
+  let hasOpenString = false;
+  
+  for (let i = 0; i < STRINGS_COUNT; i++) {
+    const fret = getChordFret(i, frets);
+    if (fret === 0) hasOpenString = true;
+    if (fret > 0) {
+      frettedNotes.push({ string: i, fret });
+    }
+  }
+  if (frettedNotes.length === 0) return null;
 
-  const svgWidth = margin.left + (STRING_COUNT - 1) * spacing.string + margin.right + 20;
-  const svgHeight = margin.top + FRET_COUNT * spacing.fret + margin.bottom;
+  const minFret = Math.min(...frettedNotes.map(n => n.fret));
+  
+  // Barre chords typically have no open strings and start at fret 1 or higher
+  if (hasOpenString || minFret < 1) return null;
 
-  const getX = (stringIndex) => margin.left + stringIndex * spacing.string;
-  const getY = (fretIndex) => margin.top + fretIndex * spacing.fret;
+  const stringsAtMinFret = frettedNotes.filter(n => n.fret === minFret);
 
-  // Get the actual start fret based on the selected position
-  const getStartFret = () => {
-    if (!positions || selectedPosition >= positions.length) return 1;
-    const pos = positions[selectedPosition];
-    if (pos.capo !== null && pos.capo !== undefined) return pos.capo + 1;
-    return 1;
-  };
+  if (stringsAtMinFret.length >= 2) {
+    return {
+      isBarre: true,
+      barreFret: minFret,
+      startString: Math.min(...stringsAtMinFret.map(n => n.string)),
+      endString: Math.max(...stringsAtMinFret.map(n => n.string))
+    };
+  }
+  return null;
+}
 
-  const startFret = getStartFret();
+function calculateFingerNumbers(frets, barreInfo) {
+  const fingers = new Array(STRINGS_COUNT).fill(null);
+  const frettedFretValues = new Set();
 
-  // Render barre line if applicable
-  const renderBarre = () => {
-    if (!isBarre || barreFret === null || barreFret === undefined) return null;
+  for (let i = 0; i < STRINGS_COUNT; i++) {
+    const fret = getChordFret(i, frets);
+    // Include frets from strings that are played above the barre (not at the barre fret)
+    if (fret > 0 && (!barreInfo || fret !== barreInfo.barreFret)) {
+      frettedFretValues.add(fret);
+    }
+  }
 
-    const pos = positions[selectedPosition];
-    if (!pos) return null;
+  const sortedFretValues = Array.from(frettedFretValues).sort((a, b) => a - b);
 
-    // Find the first and last string that is fretted (not null, not -1, not 0)
-    const frettedStrings = [];
-    for (let s = 0; s < STRING_COUNT; s++) {
-      const fret = pos.frets[s];
-      if (fret !== null && fret > 0) {
-        frettedStrings.push(s);
+  for (let i = 0; i < STRINGS_COUNT; i++) {
+    const fret = getChordFret(i, frets);
+    if (fret === null || fret === undefined || fret === -1) {
+      fingers[i] = null; 
+    } else if (fret === 0) {
+      fingers[i] = 0; 
+    } else if (barreInfo && i >= barreInfo.startString && i <= barreInfo.endString) {
+      const fret = getChordFret(i, frets);
+      if (fret === barreInfo.barreFret) {
+        fingers[i] = 1; // Only strings AT the barre fret get finger 1
+      } else {
+        // Strings above the barre use the rank logic, starting at finger 2
+        const rank = sortedFretValues.indexOf(fret);
+        fingers[i] = Math.min(rank + 2, 4);
       }
+    } else if (fret > 0) {
+      const rank = sortedFretValues.indexOf(fret);
+      fingers[i] = Math.min(rank + 1, 4);
     }
+  }
+  return fingers;
+}
 
-    if (frettedStrings.length === 0) return null;
+const Fretboard = ({ frets, barre, dbFingers, startFret = 1, displayFretCount = 4 }) => {
+  // Use database barre info if available, otherwise detect it
+  const barreInfo = barre ? {
+    isBarre: true,
+    barreFret: barre,
+    startString: 0,
+    endString: STRINGS_COUNT - 1
+  } : detectBarreChord(frets);
 
-    const minString = Math.min(...frettedStrings);
-    const maxString = Math.max(...frettedStrings);
+  // Database fingers are already in LowE-to-e order (thickest to thinnest)
+  // SVG displays strings from high-e (top) to LowE (bottom)
+  // The frets array is also LowE-to-e, and getChordFret handles the index mapping
+  // No reversal needed — data is already in the correct order
+  let fingerNumbers;
+  if (dbFingers && Array.isArray(dbFingers) && dbFingers.length === STRINGS_COUNT) {
+    fingerNumbers = [...dbFingers];
+  } else {
+    // Fallback to calculated fingers
+    fingerNumbers = calculateFingerNumbers(frets, barreInfo);
+  }
 
-    // The barre fret is relative to the position, so actual fret = barreFret + startFret - 1
-    const actualBarreFret = barreFret + startFret - 1;
-    const y = getY(actualBarreFret - 1);
-    const x1 = getX(minString) - 10;
-    const x2 = getX(maxString) + 10;
+  const NUT_WIDTH = 6;
 
-    // Barre background pill
-    return (
-      <g>
-        <rect
-          x={x1}
-          y={y - 10}
-          width={x2 - x1}
-          height={20}
-          rx={10}
-          fill="rgba(96, 165, 250, 0.15)"
-        />
-        <rect
-          x={x1 + 4}
-          y={y - 1}
-          width={x2 - x1 - 8}
-          height={2}
-          fill="#60a5fa"
-          rx={1}
-        />
-      </g>
-    );
-  };
+  const MARGIN_LEFT = 30;
+  const NUT_X = MARGIN_LEFT + NUT_WIDTH;
+  const MARGIN_TOP = 20;
+  const FRET_WIDTH = 40;
+  const STRING_HEIGHT = 35;
+  const GRID_WIDTH = displayFretCount * FRET_WIDTH;
+  const GRID_HEIGHT = (STRINGS_COUNT - 1) * STRING_HEIGHT;
 
-  const renderFingerDots = () => {
-    if (!chord || !positions || selectedPosition >= positions.length) return null;
+  const viewWidth = MARGIN_LEFT + NUT_WIDTH + GRID_WIDTH + 15;
+  const viewHeight = MARGIN_TOP + GRID_HEIGHT + 45;
 
-    const pos = positions[selectedPosition];
-    const frettedPositions = [];
-
-    for (let s = 0; s < STRING_COUNT; s++) {
-      const fret = pos.frets[s];
-      if (fret !== null && fret > 0) {
-        frettedPositions.push({ string: s, fret, fretNumber: fret + startFret - 1 });
-      }
-    }
-
-    return frettedPositions.map((fp, idx) => {
-      const cx = getX(fp.string);
-      const cy = getY(fp.fret - 1);
-      const note = noteMap[stringLabels[fp.string]][fp.fretNumber - 1];
-
-      // Check if this is a barre note (same fret as barre)
-      const isBarreNote = isBarre && fp.fret === barreFret;
-
-      return (
-        <g key={`dot-${fp.string}`}>
-          <circle
-            cx={cx}
-            cy={cy}
-            r={14}
-            fill={isBarreNote ? '#3b82f6' : '#2563eb'}
-            stroke={isBarreNote ? '#93c5fd' : '#60a5fa'}
-            strokeWidth={2}
-          />
-          <text
-            x={cx}
-            y={cy + 1}
-            textAnchor="middle"
-            dominantBaseline="central"
-            fill="white"
-            fontSize={11}
-            fontWeight="bold"
-          >
-            {note}
-          </text>
-        </g>
-      );
-    });
-  };
-
-  const renderOpenMutes = () => {
-    if (!chord || !positions || selectedPosition >= positions.length) return null;
-
-    const pos = positions[selectedPosition];
-    const elements = [];
-
-    for (let s = 0; s < STRING_COUNT; s++) {
-      const fret = pos.frets[s];
-      const cx = getX(s);
-      const nutY = getY(0) - 12;
-
-      if (fret === 0) {
-        // Open string - circle
-        elements.push(
-          <circle
-            key={`open-${s}`}
-            cx={cx}
-            cy={nutY - 10}
-            r={6}
-            fill="none"
-            stroke="#94a3b8"
-            strokeWidth={1.5}
-          />
-        );
-      } else if (fret === -1) {
-        // Muted string - X
-        elements.push(
-          <g key={`mute-${s}`} stroke="#ef4444" strokeWidth={2}>
-            <line x1={cx - 4} y1={nutY - 14} x2={cx + 4} y2={nutY - 6} />
-            <line x1={cx + 4} y1={nutY - 14} x2={cx - 4} y2={nutY - 6} />
-          </g>
-        );
-      }
-    }
-
-    return elements;
-  };
-
-  const renderFretNumbers = () => {
-    const fretNums = [];
-    for (let f = 0; f < FRET_COUNT; f++) {
-      const actualFret = f + startFret;
-      fretNums.push(
-        <text
-          key={`fret-num-${f}`}
-          x={getX(0)}
-          y={getY(f) + spacing.fret - 12}
-          textAnchor="middle"
-          fill="#64748b"
-          fontSize={12}
-          fontWeight="500"
-        >
-          {actualFret}
-        </text>
-      );
-    }
-    return fretNums;
-  };
-
-  const renderFretMarkers = () => {
-    const markerFrets = [3, 5, 7, 9, 12, 15];
-    const dots = [];
-
-    for (let f = 0; f < FRET_COUNT; f++) {
-      const actualFret = f + startFret;
-      if (markerFrets.includes(actualFret)) {
-        if (actualFret === 12) {
-          // Double dot for 12th fret
-          dots.push(
-            <circle key={`marker-${f}`} cx={getX(2)} cy={getY(f) + spacing.fret / 2} r={4} fill="#475569" />
-          );
-          dots.push(
-            <circle key={`marker-${f}-2`} cx={getX(3)} cy={getY(f) + spacing.fret / 2} r={4} fill="#475569" />
-          );
-        } else {
-          dots.push(
-            <circle key={`marker-${f}`} cx={getX(2)} cy={getY(f) + spacing.fret / 2} r={4} fill="#475569" />
-          );
-        }
-      }
-    }
-
-    return dots;
-  };
+  // Determine where to start showing fret numbers
+  // If startFret > 1, show the barre/capo position and absolute fret numbers
+  const fretStart = startFret > 1 ? startFret : 1;
 
   return (
-    <div className="fretboard-container flex justify-center">
+    <div className="w-full bg-slate-900 p-4 rounded-xl shadow-2xl overflow-hidden">
       <svg
-        width={svgWidth}
-        height={svgHeight}
-        className="bg-slate-800 rounded-lg shadow-2xl"
-        viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+        viewBox={`0 0 ${viewWidth} ${viewHeight}`}
+        className="w-full max-w-[400px] mx-auto"
+        xmlns="http://www.w3.org/2000/svg"
       >
-        {/* String labels (E A D G B e) */}
-        {stringLabels.map((label, i) => (
-          <text
-            key={`string-label-${i}`}
-            x={getX(i)}
-            y={margin.top - 18}
-            textAnchor="middle"
-            fill="#94a3b8"
-            fontSize={12}
-            fontWeight="600"
-          >
-            {label}
-          </text>
-        ))}
-
-        {/* Fret lines */}
-        {Array.from({ length: FRET_COUNT }, (_, f) => (
+        {/* Fret Lines (Vertical) */}
+        {[...Array(displayFretCount + 1)].map((_, i) => (
           <line
-            key={`fret-${f}`}
-            x1={getX(0)}
-            y1={getY(f)}
-            x2={getX(STRING_COUNT - 1)}
-            y2={getY(f)}
+            key={`fret-v-${i}`}
+            x1={NUT_X + i * FRET_WIDTH}
+            y1={MARGIN_TOP - 5}
+            x2={NUT_X + i * FRET_WIDTH}
+            y2={MARGIN_TOP + GRID_HEIGHT + 5}
             stroke="#475569"
-            strokeWidth={f === 0 ? 3 : 1.5}
+            strokeWidth="2"
           />
         ))}
 
-        {/* String lines */}
-        {Array.from({ length: STRING_COUNT }, (_, s) => (
-          <line
-            key={`string-${s}`}
-            x1={getX(s)}
-            y1={getY(0)}
-            x2={getX(s)}
-            y2={getY(FRET_COUNT - 1)}
-            stroke="#94a3b8"
-            strokeWidth={2.5 - s * 0.3}
+        {/* Nut (Thick vertical bar at fret 0, only for open positions) */}
+        {startFret <= 1 && <line x1={NUT_X} y1={MARGIN_TOP - 5} x2={NUT_X} y2={MARGIN_TOP + GRID_HEIGHT + 5} stroke="#cbd5e1" strokeWidth={NUT_WIDTH} />}
+
+        {/* Strings (Horizontal) */}
+        {[...Array(STRINGS_COUNT)].map((_, i) => {
+          const y = MARGIN_TOP + i * STRING_HEIGHT;
+          return (
+            <g key={`string-${i}`}>
+              <text x={MARGIN_LEFT - 5} y={y + 4} textAnchor="end" fill="#94a3b8" className="text-xs font-bold uppercase">
+                {STRING_NAMES[i]}
+              </text>
+              <line x1={NUT_X} y1={y} x2={NUT_X + GRID_WIDTH} y2={y} stroke="#94a3b8" strokeWidth="1.5" />
+            </g>
+          );
+        })}
+
+        {/* Barre Highlight */}
+        {barreInfo && barreInfo.isBarre && (
+          <rect
+            x={NUT_X + (barreInfo.barreFret - startFret) * FRET_WIDTH - 4}
+            y={MARGIN_TOP}
+            width={8}
+            height={GRID_HEIGHT}
+            rx="4"
+            fill="#ef4444"
+            opacity="0.5"
           />
-        ))}
+        )}
 
-        {/* Fret markers (dots) */}
-        {renderFretMarkers()}
+        {/* Notes & Finger Numbers */}
+        {frets.map((fretData, stringIndex) => {
+          const fret = getChordFret(stringIndex, frets);
+          const y = MARGIN_TOP + stringIndex * STRING_HEIGHT;
 
-        {/* Barre line */}
-        {renderBarre()}
+          if (fret === -1 || fret === null || fret === undefined) {
+            return <text key={`m-${stringIndex}`} x={MARGIN_LEFT - 5} y={y + 4} textAnchor="end" fill="#ef4444" className="font-bold">×</text>;
+          }
+          if (fret === 0) {
+            return <circle key={`o-${stringIndex}`} cx={NUT_X} cy={y} r={10} fill="#22c55e" />;
+          }
+          if (fret > 0) {
+            // Calculate x position based on fret relative to startFret
+            const relativeFret = fret - startFret + 1;
+            const x = NUT_X + relativeFret * FRET_WIDTH - (FRET_WIDTH / 2);
+            return (
+              <g key={`f-${stringIndex}`}>
+                <circle cx={x} cy={y} r={14} fill="#3b82f6" opacity="0.4" />
+                <circle cx={x} cy={y} r={12} fill="#3b82f6" />
+                {fingerNumbers[stringIndex] > 0 && (
+                  <text x={x} y={y + 4} textAnchor="middle" className="fill-white text-[10px] font-bold">
+                    {fingerNumbers[stringIndex]}
+                  </text>
+                )}
+              </g>
+            );
+          }
+          return null;
+        })}
 
-        {/* Open string circles / muted Xs */}
-        {renderOpenMutes()}
-
-        {/* Finger dots with note names */}
-        {renderFingerDots()}
-
-        {/* Fret numbers at bottom */}
-        {renderFretNumbers()}
+        {/* Fret Number Labels - show "Open" for open chords, absolute fret numbers for movable shapes */}
+        {startFret <= 1 ? (
+          <text 
+            x={NUT_X + (displayFretCount / 2) * FRET_WIDTH} 
+            y={MARGIN_TOP + GRID_HEIGHT + 25} 
+            textAnchor="middle" 
+            fill="#64748b" 
+            className="text-xs font-semibold"
+          >
+            Open
+          </text>
+        ) : (
+          [...Array(displayFretCount)].map((_, i) => (
+            <text 
+              key={`fn-${i}`} 
+              x={NUT_X + (i + 1) * FRET_WIDTH - (FRET_WIDTH / 2)} 
+              y={MARGIN_TOP + GRID_HEIGHT + 25} 
+              textAnchor="middle" 
+              fill="#64748b" 
+              className="text-xs font-semibold"
+            >
+              {startFret + i}
+            </text>
+          ))
+        )}
       </svg>
+
+      <div className="mt-3 flex gap-4 text-xs text-slate-400 justify-center">
+        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block"></span> Open</span>
+        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span> Fretted</span>
+        {barreInfo && barreInfo.isBarre && <span className="flex items-center gap-1"><span className="w-4 h-1 bg-red-500 inline-block rounded"></span> Barre</span>}
+      </div>
     </div>
   );
 };

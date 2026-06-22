@@ -1,57 +1,81 @@
-# Guitar Chord Explorer
+# Guitar Chord Pro
 
-A modern, interactive guitar chord learning tool built with React, Vite, and Tailwind CSS.
+A modern, interactive guitar chord learning tool built with React and Vite. Visualize any guitar chord with a clear fretboard diagram, search your chord database, and master your chords with precision.
+
+![Guitar Chord Pro Screenshot](./screenshot.png)
 
 ## Features
 
-- **Interactive Fretboard**: Visualize chord positions on a realistic 6-string, 12-fret fretboard
-- **Multiple Positions**: View different ways to play the same chord across the fretboard (open position first, then movable shapes down the neck)
-- **Barre Chords**: Clear visual indication of barre chord shapes with a distinct red marker
-- **Position Navigation**: Switch between different chord positions with arrow controls below the fretboard
-- **Position-Specific Finger Numbers**: Finger numbers adapt to each position and show only valid fingers for that chord
-- **Note Annotations**: Note names displayed on fret positions for educational purposes
-- **Dark Theme**: Modern dark UI with gradient accents
-- **Responsive Design**: Works great on desktop and mobile
+- **Interactive Fretboard** — Visualize chord shapes with color-coded finger placements (blue = fretted, green = open strings, red X = muted strings)
+- **Root Note & Chord Type Selection** — Choose from all 12 root notes and 50+ chord types (Major, minor, 7th, sus, dim, augmented, and more)
+- **Search Bar** — Quickly find any chord by name (e.g. "C", "G", "Am", "Bm7")
+- **Clean Dark UI** — Easy on the eyes with a modern, responsive design
 
-## Chord Data
+## Prerequisites
 
-The app uses chord data from the [guitar-chords-db-json](https://github.com/szaza/guitar-chords-db-json) repository, converted for use in this project. The data includes:
+- **Node.js** (v18 or higher)
+- **npm** (v9 or higher)
 
-- **732 chord types** across 12 root notes and 61 qualities
-- **13,742 total positions** (multiple ways to play each chord)
-- **Barre chord detection** for visual clarity
-- **Note name annotations** for educational purposes
+## Setup & Installation
 
-## Running Locally
+1. **Clone the repository**
 
-1. Clone the repository
-2. Install dependencies: `npm install`
-3. Start the development server: `npm run dev`
-4. Open [http://localhost:5173](http://localhost:5173) in your browser
+   ```bash
+   git clone https://github.com/matt-dylan/guitar-chord-app.git
+   cd guitar-chord-app
+   ```
 
-## Building for Production
+2. **Install dependencies**
 
-```bash
-npm run build
+   ```bash
+   npm install
+   ```
+
+3. **Start the development server**
+
+   ```bash
+   npm run dev
+   ```
+
+   The app will open at `http://localhost:5173`
+
+## Available Scripts
+
+| Command              | Description                        |
+|----------------------|------------------------------------|
+| `npm run dev`        | Start the Vite development server  |
+| `npm run build`      | Build for production               |
+| `npm run preview`    | Preview the production build       |
+
+## Project Structure
+
+```
+guitar-chord-app/
+├── src/
+│   ├── components/        # React components
+│   │   ├── ChordSearch.jsx
+│   │   └── Fretboard.jsx
+│   ├── data/              # Chord database & config
+│   │   ├── chords.json
+│   │   └── chords_db.json
+│   ├── services/          # API & data services
+│   │   └── chordService.js
+│   ├── App.jsx            # Main application component
+│   └── main.jsx           # Entry point
+├── public/                # Static assets
+├── package.json
+├── vite.config.js
+├── tailwind.config.js
+└── README.md
 ```
 
-The optimized production build will be in the `dist/` directory.
+## Tech Stack
 
-## Chord Data Format
-
-Each chord entry contains:
-- `fretPositions`: Array of 6 strings with fret numbers (null = muted, 0 = open, >0 = fretted)
-- `barre`: Object with `stringStart`, `stringEnd`, and `fret` for barre chords
-- `noteNames`: Array of note names for each string
-- `startFret`: The fret number where the chord shape begins
-
-## Technology Stack
-
-- **React 19** - UI library
-- **Vite 7** - Build tool and dev server
-- **Tailwind CSS 4** - Utility-first CSS framework
-- **Chord Data** - guitar-chords-db-json (converted)
+- **React 18** — UI framework
+- **Vite 5** — Build tool & dev server
+- **Tailwind CSS 3** — Utility-first styling
+- **Lucide React** — Icon library
 
 ## License
 
-MIT
+This project is licensed under the [MIT License](LICENSE).
