@@ -52,6 +52,7 @@ function parseChordName(name) {
     
     // Minor
     'm': 'm',
+    'min': 'm',
     '-': 'm',
     'minor': 'm',
     

@@ -105,7 +105,7 @@ function App() {
         const suffixRaw = rawName.slice(r.length).toLowerCase();
         // Map to a DB suffix the dropdown can use
         const suffixMap = {
-          'minor': 'm', 'm': 'm', '-': 'm',
+          'minor': 'm', 'm': 'm', 'min': 'm', '-': 'm',
           'major': '', '': '', 'maj': '',
           'dim': 'dim', 'dim7': 'dim7', 'o': 'dim', 'o7': 'dim7',
           'm7': 'm7', 'min7': 'm7', '-7': 'm7',
