@@ -84,13 +84,13 @@ const Fretboard = ({ frets, barre, dbFingers, startFret = 1, displayFretCount = 
     endString: STRINGS_COUNT - 1
   } : detectBarreChord(frets);
 
-  // Database fingers are already in LowE-to-e order (thickest to thinnest)
-  // SVG displays strings from high-e (top) to LowE (bottom)
-  // The frets array is also LowE-to-e, and getChordFret handles the index mapping
-  // No reversal needed — data is already in the correct order
+  // Database fingers are in LowE-to-e order (thickest to thinnest)
+  // SVG displays in high-e-to-LowE order (thinnest to thickest)
+  // So we reverse to map correctly
   let fingerNumbers;
   if (dbFingers && Array.isArray(dbFingers) && dbFingers.length === STRINGS_COUNT) {
-    fingerNumbers = [...dbFingers];
+    // Use database fingers, reversed for SVG order
+    fingerNumbers = [...dbFingers].reverse();
   } else {
     // Fallback to calculated fingers
     fingerNumbers = calculateFingerNumbers(frets, barreInfo);
@@ -192,31 +192,19 @@ const Fretboard = ({ frets, barre, dbFingers, startFret = 1, displayFretCount = 
           return null;
         })}
 
-        {/* Fret Number Labels - show "Open" for open chords, absolute fret numbers for movable shapes */}
-        {startFret <= 1 ? (
+        {/* Fret Number Labels - absolute fret numbers based on startFret */}
+        {[...Array(displayFretCount)].map((_, i) => (
           <text 
-            x={NUT_X + (displayFretCount / 2) * FRET_WIDTH} 
+            key={`fn-${i}`} 
+            x={NUT_X + (i + 1) * FRET_WIDTH - (FRET_WIDTH / 2)} 
             y={MARGIN_TOP + GRID_HEIGHT + 25} 
             textAnchor="middle" 
             fill="#64748b" 
             className="text-xs font-semibold"
           >
-            Open
+            {startFret + i}
           </text>
-        ) : (
-          [...Array(displayFretCount)].map((_, i) => (
-            <text 
-              key={`fn-${i}`} 
-              x={NUT_X + (i + 1) * FRET_WIDTH - (FRET_WIDTH / 2)} 
-              y={MARGIN_TOP + GRID_HEIGHT + 25} 
-              textAnchor="middle" 
-              fill="#64748b" 
-              className="text-xs font-semibold"
-            >
-              {startFret + i}
-            </text>
-          ))
-        )}
+        ))}
       </svg>
 
       <div className="mt-3 flex gap-4 text-xs text-slate-400 justify-center">
