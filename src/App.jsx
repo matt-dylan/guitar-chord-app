@@ -49,22 +49,29 @@ function App() {
     '11': '11', 'maj11': 'maj11', 'maj#11': 'maj#11',
     '13': '13', 'maj13': 'maj13',
     'add9': 'add9', 'add11': 'add11', 'madd9': 'madd9',
-    'aug': 'Aug', '+': 'Aug',
-    'aug7': 'Aug7', 'aug9': 'Aug9', 'augmaj7': 'Augmaj7', 'augmaj9': 'Augmaj9',
-    'dim': 'Dim', 'o': 'Dim', '°': 'Dim',
-    'dim7': 'Dim7', 'o7': 'Dim7', '°7': 'Dim7',
+    'aug': 'aug', '+': 'aug',
+    'aug7': 'aug7', 'aug9': 'aug9', 'augmaj7': 'augmaj7', 'augmaj9': 'augmaj9',
+    'dim': 'dim', 'o': 'dim', '°': 'dim',
+    'dim7': 'dim7', 'o7': 'dim7', '°7': 'dim7',
     'm7': 'm7', 'min7': 'm7', '-7': 'm7',
     'm7b5': 'm7b5', 'min7b5': 'm7b5', 'half-dim': 'm7b5', 'ø': 'm7b5',
     'maj7': 'maj7', 'ma7': 'maj7',
-    'mmaj7': 'mMaj7', 'm(maj7)': 'mMaj7', 'min(maj7)': 'mMaj7',
-    'mmaj7#5': 'mMaj7#5', 'mmaj7b5': 'mMaj7b5', 'mmaj7bb5': 'mMaj7bb5',
-    'mmaj9': 'mMaj9', 'mmaj11': 'mMaj11', 'mmaj13': 'mMaj13',
+    'mmaj7': 'mmaj7', 'm(maj7)': 'mmaj7', 'min(maj7)': 'mmaj7',
+    'mmaj7#5': 'mmaj7#5', 'mmaj7b5': 'mmaj7b5', 'mmaj7bb5': 'mmaj7bb5',
+    'mmaj9': 'mmaj9', 'mmaj11': 'mmaj11', 'mmaj13': 'mmaj13',
     'm#5': 'm#5', 'm6add9': 'm6add9', 'm7#5': 'm7#5',
-    'maj7b5': 'Maj7b5', 'majb5': 'Majb5', 'mbb5': 'Mbbl5',
-    'maj7sus2': 'Maj7sus2', 'maj7sus4': 'Maj7sus4',
-    'maj7sus2sus4': 'Maj7sus2sus4', 'maj7sus4#5': 'Maj7sus4#5',
-    'sus': 'Sus', 'sus2': 'Sus2', 'sus4': 'Sus4', 'sus2sus4': 'Sus',
-    'sus2#5': 'Sus2#5', 'sus2b5': 'Sus2b5', 'sus4#5': 'Sus4#5',
+    'maj7b5': 'maj7b5', 'majb5': 'majb5', 'mbb5': 'mbb5',
+    'maj7sus2': 'maj7sus2', 'maj7sus4': 'maj7sus4',
+    'maj7sus2sus4': 'maj7sus2sus4', 'maj7sus4#5': 'maj7sus4#5',
+    'sus': 'sus', 'sus2': 'sus2', 'sus4': 'sus4', 'sus2sus4': 'sus',
+    'sus2#5': 'sus2#5', 'sus2b5': 'sus2b5', 'sus4#5': 'sus4#5',
+    // Slash chords — display as "Root/Bass"
+    '/A': '/A', '/B': '/B', '/C': '/C', '/C#': '/C#', '/D': '/D',
+    '/E': '/E', '/F': '/F', '/F#': '/F#', '/G': '/G',
+    'm/A': 'm/A', 'm/B': 'm/B', 'm/C': 'm/C', 'm/C#': 'm/C#',
+    'm/D': 'm/D', 'm/E': 'm/E', 'm/F': 'm/F', 'm/F#': 'm/F#',
+    'm/G': 'm/G', 'm/Ab': 'm/Ab', 'm/Bb': 'm/Bb', 'm/Eb': 'm/Eb',
+    '7/G': '7/G',
   };
 
   const formatChordName = (rawName) => {
@@ -83,7 +90,7 @@ function App() {
     for (const r of USER_ROOTS) {
       if (rawName.startsWith(r)) {
         root = r;
-        suffix = rawName.slice(r.length).toLowerCase();
+        suffix = rawName.slice(r.length);
         break;
       }
     }
@@ -92,7 +99,18 @@ function App() {
     
     // Map suffix to display name
     const displaySuffix = SUFFIX_DISPLAY[suffix] || suffix || 'maj';
-    if (displaySuffix === 'maj' || displaySuffix === '') return root;
+    
+    // Handle slash chords — display as "Root/Bass" (preserve case of bass note)
+    if (suffix.startsWith('/')) {
+      return `${root}${displaySuffix}`;
+    }
+    if (suffix.includes('/')) {
+      // e.g., "m/G" → "Cm/G"
+      return `${root}${displaySuffix}`;
+    }
+    
+    const lowerSuffix = suffix.toLowerCase();
+    if (lowerSuffix === 'maj' || lowerSuffix === '') return root;
     return `${root} ${displaySuffix}`;
   };
 
@@ -103,7 +121,73 @@ function App() {
       if (rawName.startsWith(r)) {
         const root = r;
         const suffixRaw = rawName.slice(r.length).toLowerCase();
-        // Map to a DB suffix the dropdown can use
+        
+        // Handle slash chords: e.g., "C/G" → suffix="/G", "Cm/G" → suffix="m/G"
+        if (suffixRaw.startsWith('/')) {
+          const bassNote = suffixRaw.slice(1);
+          // Map bass note to user-facing name
+          const bassMap = {
+            'a': 'A', 'bb': 'Bb', 'b': 'B',
+            'c': 'C', 'c#': 'C#', 'db': 'Db', 'd': 'D',
+            'd#': 'D#', 'eb': 'Eb', 'e': 'E',
+            'f': 'F', 'f#': 'F#', 'gb': 'Gb', 'g': 'G', 'g#': 'G#',
+          };
+          const displayBass = bassMap[bassNote] || bassNote;
+          const suffix = `/${displayBass}`;
+          return { root, suffix };
+        }
+        
+        const slashIdx = suffixRaw.indexOf('/');
+        if (slashIdx > 0) {
+          const beforeSlash = suffixRaw.slice(0, slashIdx);
+          const afterSlash = suffixRaw.slice(slashIdx + 1);
+          
+          const bassMap = {
+            'a': 'A', 'bb': 'Bb', 'b': 'B',
+            'c': 'C', 'c#': 'C#', 'db': 'Db', 'd': 'D',
+            'd#': 'D#', 'eb': 'Eb', 'e': 'E',
+            'f': 'F', 'f#': 'F#', 'gb': 'Gb', 'g': 'G', 'g#': 'G#',
+          };
+          const displayBass = bassMap[afterSlash] || afterSlash;
+          
+          const suffixMap = {
+            'minor': 'm', 'm': 'm', 'min': 'm', '-': 'm',
+            'major': '', '': '', 'maj': '',
+            'dim': 'dim', 'dim7': 'dim7', 'o': 'dim', 'o7': 'dim7',
+            'm7': 'm7', 'min7': 'm7', '-7': 'm7',
+            'm7b5': 'm7b5', 'min7b5': 'm7b5',
+            'maj7': 'maj7', 'ma7': 'maj7',
+            'mmaj7': 'mmaj7', 'm(maj7)': 'mmaj7',
+            'sus': 'sus', 'sus2': 'sus2', 'sus4': 'sus4',
+            '7': '7', 'dom7': '7',
+            '5': '5', 'power': '5',
+            'aug': 'aug', '+': 'aug',
+            'add9': 'add9', 'm9': 'm9', 'maj9': 'maj9', '9': '9',
+            '11': '11', '13': '13', 'm6': 'm6', '6': '6', '69': '69',
+            'add11': 'add11', 'madd9': 'madd9',
+            '6add9': '6add9', '6b5': '6b5',
+            '7b5': '7b5', '7#9': '7#9', '7sus4': '7sus4', '7sus2': '7sus2',
+            '9b5': '9b5', '9sus4': '9sus4',
+            'maj11': 'maj11', 'maj#11': 'maj#11', 'maj13': 'maj13',
+            'm7#5': 'm7#5', 'aug7': 'aug7', 'aug9': 'aug9', 'augmaj7': 'augmaj7', 'augmaj9': 'augmaj9',
+            'mmaj7#5': 'mmaj7#5', 'mmaj7b5': 'mmaj7b5',
+            'mmaj7bb5': 'mmaj7bb5', 'mmaj9': 'mmaj9', 'mmaj11': 'mmaj11', 'mmaj13': 'mmaj13',
+            'maj7b5': 'maj7b5', 'maj7sus2': 'maj7sus2', 'maj7sus4': 'maj7sus4',
+            'maj7sus2sus4': 'maj7sus2sus4', 'maj7sus4#5': 'maj7sus4#5',
+            'majb5': 'majb5',
+            'mbb5': 'mbb5', 'm#5': 'm#5',
+            'sus2#5': 'sus2#5', 'sus2b5': 'sus2b5', 'sus2sus4': 'sus2sus4',
+            'sus4#5': 'sus4#5',
+            '7sus2#5': '7sus2#5', '7sus2sus4': '7sus2sus4', '7sus4#5': '7sus4#5',
+            '7#9b5': '7#9b5',
+          };
+          
+          const dbSuffix = suffixMap[beforeSlash] || beforeSlash;
+          const suffix = `${dbSuffix}/${displayBass}`;
+          return { root, suffix };
+        }
+        
+        // Non-slash chord
         const suffixMap = {
           'minor': 'm', 'm': 'm', 'min': 'm', '-': 'm',
           'major': '', '': '', 'maj': '',
@@ -208,7 +292,7 @@ function App() {
       setChordFingers(result.fingers);
       setAllPositions(result.positions || [result]);
       setCurrentPosition(0);
-      setCurrentChord(`${root} ${suffix === '' ? '' : suffix}`);
+      setCurrentChord(formatChordName(`${root}${suffix}`));
       setError(null);
     } catch (err) {
       console.error('Failed to load chord:', err);
@@ -233,17 +317,20 @@ function App() {
 
   // Get current position data
   const currentPositionData = allPositions[currentPosition] || {};
-  const hasCapo = currentPositionData.capo === true;
-  
-  // Calculate startFret: use capo/barre position if present, otherwise find the first fretted fret
+  // The frets/fingers data is stored in e-to-E order (thinnest to thickest: e,B,G,D,A,E)
+  // Fretboard also renders e-to-E, so no reversal needed
+  const displayFrets = currentPositionData.frets ? [...currentPositionData.frets] : [];
+  const displayFingers = chordFingers ? [...chordFingers] : null;
+
+  // Calculate startFret for fret number labels
+  // Open-position chords (with open strings) always start at fret 1
+  // Barre chords (no open strings) start at the barre fret (min fretted fret)
   let startFret = 1;
-  if (currentPositionData.frets && currentPositionData.frets.length > 0) {
-    if (hasCapo && currentPositionData.barre) {
-      startFret = currentPositionData.barre;
-    } else {
-      // Find the minimum fretted fret (excluding muted strings -1)
-      const frettedFrets = currentPositionData.frets.filter(f => f > 0);
-      startFret = frettedFrets.length > 0 ? Math.min(...frettedFrets) : 1;
+  if (displayFrets.length > 0) {
+    const hasOpenString = displayFrets.some(f => f === 0);
+    const frettedFrets = displayFrets.filter(f => f > 0);
+    if (frettedFrets.length > 0) {
+      startFret = hasOpenString ? 1 : Math.min(...frettedFrets);
     }
   }
   const capoFret = startFret;
@@ -324,9 +411,9 @@ function App() {
 
         {/* Fretboard */}
         <Fretboard 
-          frets={chordShape} 
+          frets={displayFrets} 
           barre={chordBarre} 
-          dbFingers={chordFingers}
+          dbFingers={displayFingers}
           startFret={capoFret}
           displayFretCount={displayFretCount}
         />

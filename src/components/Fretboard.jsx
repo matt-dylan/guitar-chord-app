@@ -2,7 +2,6 @@ import React from 'react';
 
 const STRINGS_COUNT = 6;
 // Top to bottom on screen: high e, B, G, D, A, Low E
-// Standard notation (bottom to top): E, A, D, G, B, e
 const STRING_NAMES = ['e', 'B', 'G', 'D', 'A', 'E'];
 
 const getChordFret = (stringIndex, frets) => frets[stringIndex];
@@ -76,13 +75,10 @@ function calculateFingerNumbers(frets, barreInfo) {
 }
 
 const Fretboard = ({ frets, barre, dbFingers, startFret = 1, displayFretCount = 4 }) => {
-  // Use database barre info if available, otherwise detect it
-  const barreInfo = barre ? {
-    isBarre: true,
-    barreFret: barre,
-    startString: 0,
-    endString: STRINGS_COUNT - 1
-  } : detectBarreChord(frets);
+  // The database's "barre" field stores a finger number (1), not an actual fret position.
+  // Using it directly causes the highlight to render at the wrong fret (e.g., barre=1 - startFret=3 = -2).
+  // Instead, always detect the actual barre from the fretted notes.
+  const barreInfo = detectBarreChord(frets);
 
   // Database fingers are in e-to-E order (thinnest to thickest)
   // SVG displays in the same order, so no reversal needed
